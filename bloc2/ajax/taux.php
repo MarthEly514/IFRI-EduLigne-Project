@@ -1,8 +1,9 @@
-<!-- endpoint JSON pour le taux en temps réel -->
- <?php
+<!-- endpoint JSON pour le taux de remplissage en temps réel -->
+<?php
 
-require_once __DIR__ . '/../../includes/inscription.php';
+require_once __DIR__ . '/../includes/cours.php';
 
+// Ce fichier répond toujours en JSON, jamais en HTML
 header('Content-Type: application/json');
 
 $id_cours = filter_input(INPUT_GET, 'id_cours', FILTER_VALIDATE_INT);

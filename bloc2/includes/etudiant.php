@@ -1,30 +1,9 @@
+<!-- actions de l'espace étudiant -->
 <?php
 
 require_once __DIR__ . '/../config/db.php';
 
-function getEtudiants(): array {
-    $conn = getOracleConnection();
-
-    $stmt = oci_parse($conn, "SELECT id_etudiant, nom, prenom FROM ETUDIANT ORDER BY nom");
-    $ok   = oci_execute($stmt, OCI_DEFAULT);
-
-    if (!$ok) {
-        $e = oci_error($stmt);
-        error_log("[EduLigne] getEtudiants() : " . $e['message']);
-        oci_free_statement($stmt);
-        oci_close($conn);
-        return [];
-    }
-
-    $etudiants = [];
-    oci_fetch_all($stmt, $etudiants, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
-
-    oci_free_statement($stmt);
-    oci_close($conn);
-
-    return $etudiants;
-}
-
+// Retourne la liste des cours disponibles pour l'étudiant connecté
 function getCours(): array {
     $conn = getOracleConnection();
 
@@ -48,11 +27,11 @@ function getCours(): array {
     return $cours;
 }
 
+// Inscrit l'étudiant connecté à un cours via PRC_INSCRIPTION_SECURISEE
 function inscrireEtudiant(int $id_etudiant, int $id_cours): array {
     $conn = getOracleConnection();
 
-    $sql  = "BEGIN PRC_INSCRIPTION_SECURISEE(:p_id_etudiant, :p_id_cours); END;";
-    $stmt = oci_parse($conn, $sql);
+    $stmt = oci_parse($conn, "BEGIN PRC_INSCRIPTION_SECURISEE(:p_id_etudiant, :p_id_cours); END;");
 
     oci_bind_by_name($stmt, ':p_id_etudiant', $id_etudiant, -1, SQLT_INT);
     oci_bind_by_name($stmt, ':p_id_cours',    $id_cours,    -1, SQLT_INT);
@@ -64,11 +43,10 @@ function inscrireEtudiant(int $id_etudiant, int $id_cours): array {
         oci_free_statement($stmt);
         oci_close($conn);
 
-        if (isset($e['code']) && $e['code'] == 20001) {
-            return ['succes' => false, 'message' => "Désolé, ce cours est complet."];
+        if ($e['code'] == 20001) {
+            return ['succes' => false, 'message' => "Ce cours est complet."];
         }
-
-        if (isset($e['code']) && $e['code'] == 20002) {
+        if ($e['code'] == 20002) {
             return ['succes' => false, 'message' => "Vous êtes déjà inscrit à ce cours."];
         }
 
@@ -83,28 +61,37 @@ function inscrireEtudiant(int $id_etudiant, int $id_cours): array {
     return ['succes' => true, 'message' => "Inscription enregistrée avec succès !"];
 }
 
-function getTauxRemplissage(int $id_cours): ?float {
+// Retire l'étudiant connecté d'un cours
+function quitterCours(int $id_etudiant, int $id_cours): array {
     $conn = getOracleConnection();
 
-    $sql  = "BEGIN :p_taux := FNC_TAUX_REMPLISSAGE(:p_id_cours); END;";
-    $stmt = oci_parse($conn, $sql);
+    $stmt = oci_parse($conn, "DELETE FROM INSCRIPTION 
+                               WHERE id_etudiant = :p_id_etudiant 
+                               AND id_cours = :p_id_cours");
 
-    $taux = null;
-    oci_bind_by_name($stmt, ':p_taux',     $taux,     -1, SQLT_FLT);
-    oci_bind_by_name($stmt, ':p_id_cours', $id_cours, -1, SQLT_INT);
+    oci_bind_by_name($stmt, ':p_id_etudiant', $id_etudiant, -1, SQLT_INT);
+    oci_bind_by_name($stmt, ':p_id_cours',    $id_cours,    -1, SQLT_INT);
 
-    $ok = oci_execute($stmt);
+    $ok = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 
     if (!$ok) {
         $e = oci_error($stmt);
-        error_log("[EduLigne] getTauxRemplissage() : " . $e['message']);
+        error_log("[EduLigne] quitterCours() : " . $e['message']);
         oci_free_statement($stmt);
         oci_close($conn);
-        return null;
+        return ['succes' => false, 'message' => "Une erreur technique est survenue."];
     }
 
+    // oci_num_rows() vérifie qu'une ligne a bien été supprimée
+    if (oci_num_rows($stmt) === 0) {
+        oci_free_statement($stmt);
+        oci_close($conn);
+        return ['succes' => false, 'message' => "Vous n'êtes pas inscrit à ce cours."];
+    }
+
+    oci_commit($conn);
     oci_free_statement($stmt);
     oci_close($conn);
 
-    return round((float)$taux, 2);
+    return ['succes' => true, 'message' => "Vous avez quitté le cours avec succès."];
 }
