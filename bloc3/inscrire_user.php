@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduLigne - Inscrire un utilisateur</title>
-    <link rel="stylesheet" href="Edu.css">
+    <link rel="stylesheet" href="all.css">
 </head>
 <body>
 
