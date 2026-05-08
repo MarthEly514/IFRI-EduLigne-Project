@@ -3,7 +3,7 @@
 // Paramètres de connexion à Oracle
 define('DB_USER',     'eduligne');
 define('DB_PASSWORD', 'eduligne123');
-define('DB_DSN',      'localhost/XEPDB1');
+define('DB_DSN', 'localhost/XE');
 
 // Identifiants administrateur (pas de table ADMIN dans le schéma SQL)
 define('ADMIN_NOM',      'admin');
