@@ -1,3 +1,7 @@
+<?php
+$role_requis = 'admin';
+require_once '../bloc2/includes/guard.php';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -24,7 +28,7 @@
                     <circle cx="12" cy="7" r="4" />
                 </svg>
             </div>
-            <span class="nom-utilisateur" style="font-weight:600;">Admin</span>
+            <span class="nom-utilisateur" style="font-weight:600;"><?= htmlspecialchars($session['nom']) ?></span>
         </div>
     </nav>
 
@@ -33,7 +37,7 @@
 
         <div class="liste-actions">
 
-            <a href="inscription.php" class="carte-action">
+            <a href="inscrire_user.php" class="carte-action">
                 <div class="icone-action violet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -48,7 +52,7 @@
                 </div>
             </a>
 
-            <a href="vue_users.php" class="carte-action">
+            <a href="vue_users_admin.php" class="carte-action">
                 <div class="icone-action violet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -63,7 +67,7 @@
                 </div>
             </a>
 
-            <a href="cours_admin.php" class="carte-action">
+            <a href="vue_cours_admin.php" class="carte-action">
                 <div class="icone-action violet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />

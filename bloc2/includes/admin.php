@@ -1,4 +1,3 @@
-<!-- actions réservées à l'admin -->
 <?php
 
 require_once __DIR__ . '/../config/db.php';
@@ -7,7 +6,7 @@ require_once __DIR__ . '/../config/db.php';
 function getEtudiants(): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "SELECT id_etudiant, nom, prenom, email FROM ETUDIANT ORDER BY nom");
+    $stmt = oci_parse($conn, "SELECT id, nom, prenom FROM ETUDIANT ORDER BY nom");
     $ok   = oci_execute($stmt, OCI_DEFAULT);
 
     if (!$ok) {
@@ -31,7 +30,7 @@ function getEtudiants(): array {
 function getFormateurs(): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "SELECT id_formateur, nom, prenom, email FROM FORMATEUR ORDER BY nom");
+    $stmt = oci_parse($conn, "SELECT id, nom, prenom FROM FORMATEUR ORDER BY nom");
     $ok   = oci_execute($stmt, OCI_DEFAULT);
 
     if (!$ok) {
@@ -51,17 +50,17 @@ function getFormateurs(): array {
     return $formateurs;
 }
 
-// Insère un nouvel étudiant dans la base
-function ajouterEtudiant(string $nom, string $prenom, string $email, string $password): array {
+// Insère un nouvel étudiant via la procédure Oracle PRC_CREER_ETUDIANT
+function ajouterEtudiant(string $nom, string $prenom, string $niveau, string $password, string $specialite): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "INSERT INTO ETUDIANT (nom, prenom, email, password) 
-                               VALUES (:p_nom, :p_prenom, :p_email, :p_password)");
+    $stmt = oci_parse($conn, "BEGIN PRC_CREER_ETUDIANT(:p_nom, :p_prenom, :p_niveau, :p_password, :p_specialite); END;");
 
-    oci_bind_by_name($stmt, ':p_nom',      $nom,      -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_prenom',   $prenom,   -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_email',    $email,    -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_password', $password, -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_nom',       $nom,       -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_prenom',    $prenom,    -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_niveau',    $niveau,    -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_password',  $password,  -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_specialite',$specialite,-1, SQLT_CHR);
 
     $ok = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 
@@ -70,9 +69,9 @@ function ajouterEtudiant(string $nom, string $prenom, string $email, string $pas
         oci_free_statement($stmt);
         oci_close($conn);
 
-        // ORA-00001 = violation de contrainte unique (email déjà existant)
+        // ORA-00001 = violation de contrainte unique (nom déjà existant)
         if ($e['code'] == 1) {
-            return ['succes' => false, 'message' => "Cet email est déjà utilisé."];
+            return ['succes' => false, 'message' => "Cet identifiant est déjà utilisé."];
         }
 
         error_log("[EduLigne] ajouterEtudiant() : " . $e['message']);
@@ -86,17 +85,17 @@ function ajouterEtudiant(string $nom, string $prenom, string $email, string $pas
     return ['succes' => true, 'message' => "Étudiant ajouté avec succès."];
 }
 
-// Insère un nouveau formateur dans la base
-function ajouterFormateur(string $nom, string $prenom, string $email, string $password): array {
+// Insère un nouveau formateur via la procédure Oracle PRC_CREER_FORMATEUR
+function ajouterFormateur(string $nom, string $prenom, string $domaine, string $password, string $distinction): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "INSERT INTO FORMATEUR (nom, prenom, email, password) 
-                               VALUES (:p_nom, :p_prenom, :p_email, :p_password)");
+    $stmt = oci_parse($conn, "BEGIN PRC_CREER_FORMATEUR(:p_nom, :p_prenom, :p_domaine, :p_password, :p_distinction); END;");
 
-    oci_bind_by_name($stmt, ':p_nom',      $nom,      -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_prenom',   $prenom,   -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_email',    $email,    -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':p_password', $password, -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_nom',        $nom,        -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_prenom',     $prenom,     -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_domaine',    $domaine,    -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_password',   $password,   -1, SQLT_CHR);
+    oci_bind_by_name($stmt, ':p_distinction',$distinction,-1, SQLT_CHR);
 
     $ok = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 
@@ -106,7 +105,7 @@ function ajouterFormateur(string $nom, string $prenom, string $email, string $pa
         oci_close($conn);
 
         if ($e['code'] == 1) {
-            return ['succes' => false, 'message' => "Cet email est déjà utilisé."];
+            return ['succes' => false, 'message' => "Cet identifiant est déjà utilisé."];
         }
 
         error_log("[EduLigne] ajouterFormateur() : " . $e['message']);
@@ -121,12 +120,12 @@ function ajouterFormateur(string $nom, string $prenom, string $email, string $pa
 }
 
 // Supprime un étudiant de la base
-function supprimerEtudiant(int $id_etudiant): array {
+function supprimerEtudiant(int $id): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "DELETE FROM ETUDIANT WHERE id_etudiant = :p_id_etudiant");
+    $stmt = oci_parse($conn, "DELETE FROM ETUDIANT WHERE id = :p_id");
 
-    oci_bind_by_name($stmt, ':p_id_etudiant', $id_etudiant, -1, SQLT_INT);
+    oci_bind_by_name($stmt, ':p_id', $id, -1, SQLT_INT);
 
     $ok = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 
@@ -152,12 +151,12 @@ function supprimerEtudiant(int $id_etudiant): array {
 }
 
 // Supprime un formateur de la base
-function supprimerFormateur(int $id_formateur): array {
+function supprimerFormateur(int $id): array {
     $conn = getOracleConnection();
 
-    $stmt = oci_parse($conn, "DELETE FROM FORMATEUR WHERE id_formateur = :p_id_formateur");
+    $stmt = oci_parse($conn, "DELETE FROM FORMATEUR WHERE id = :p_id");
 
-    oci_bind_by_name($stmt, ':p_id_formateur', $id_formateur, -1, SQLT_INT);
+    oci_bind_by_name($stmt, ':p_id', $id, -1, SQLT_INT);
 
     $ok = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 

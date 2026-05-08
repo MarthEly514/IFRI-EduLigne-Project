@@ -1,3 +1,12 @@
+<?php
+$role_requis = 'etudiant';
+require_once '../bloc2/includes/guard.php';
+require_once '../bloc2/includes/admin.php';
+require_once '../bloc2/includes/cours.php';
+
+$etudiants = getEtudiants();
+$listeCours = getCours();
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -81,7 +90,7 @@
                     <circle cx="12" cy="7" r="4" />
                 </svg>
             </div>
-            <span class="nom-utilisateur" style="font-weight:600;">Audrey </span>
+            <span class="nom-utilisateur" style="font-weight:600;"><?= htmlspecialchars($session['nom']) ?></span>
         </div>
     </nav>
 
@@ -102,7 +111,7 @@
                                 Rejoignez nos cours spécialisés et développez vos compétences avec les meilleurs formateurs.
                             </p>
 
-                            <form class="formulaire-cours" action="traitement.php" method="POST">
+                            <form class="formulaire-cours" action="../bloc2/traitement.php" method="POST">
                                 <!-- Étudiant -->
                                 <div class="groupe-champ">
                                     <label class="etiquette">Étudiant</label>
@@ -117,9 +126,9 @@
                                         </div>
                                         <select class="champ-select" name="etudiant_id" id="select-etudiant">
                                             <option value="0">----</option>
-                                            <option value="1">Audrey</option>
-                                            <option value="2">Marie</option>
-                                            <option value="3">Jean</option>
+                                            <?php foreach ($etudiants as $etu): ?>
+                                                <option value="<?= (int)$etu['ID'] ?>"><?= htmlspecialchars($etu['NOM'] . ' ' . $etu['PRENOM']) ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                         <div class="fleche-select">
                                             <img src="img/drop.png" alt="">
@@ -141,9 +150,9 @@
                                         </div>
                                         <select class="champ-select" name="cours_id">
                                             <option value="0">----</option>
-                                            <option value="1">Python pour débutants</option>
-                                            <option value="2">JavaScript avancé</option>
-                                            <option value="3">Design UX/UI</option>
+                                            <?php foreach ($listeCours as $c): ?>
+                                                <option value="<?= (int)$c['ID'] ?>"><?= htmlspecialchars($c['SUJET']) ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                         <div class="fleche-select">
                                             <img src="img/drop.png" alt="">
@@ -181,17 +190,16 @@
     </script>
 
     <script>
+        // Lecture des paramètres GET transmis par traitement.php
         window.onload = function() {
-            var popup = sessionStorage.getItem('popup');
-            if (popup) {
-                ouvrir(popup);
-                sessionStorage.removeItem('popup');
-            }
-            // Pré-sélectionner l'étudiant
-            var etudiant = sessionStorage.getItem('etudiant_garde');
+            var popup   = <?= json_encode($_GET['popup']    ?? '') ?>;
+            var etudiant = <?= json_encode($_GET['etudiant'] ?? '') ?>;
+
+            if (popup) ouvrir(popup);
+
             if (etudiant) {
-                document.getElementById('select-etudiant').value = etudiant;
-                sessionStorage.removeItem('etudiant_garde');
+                var sel = document.getElementById('select-etudiant');
+                if (sel) sel.value = etudiant;
             }
         }
     </script>

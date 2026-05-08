@@ -1,3 +1,4 @@
+<?php $erreur = htmlspecialchars($_GET['erreur'] ?? ''); ?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -19,6 +20,9 @@
                 </div>
                 <h1 class="logo-texte">EduLigne</h1>
                 <p>Connectez-vous à votre espace</p>
+                <?php if ($erreur): ?>
+                    <p style="color:#E53E3E; font-size:.85rem; margin-top:.5rem;"><?= $erreur ?></p>
+                <?php endif; ?>
             </div>
 
             <div class="choix-role">
@@ -33,7 +37,7 @@
                 </button>
             </div>
 
-            <form method="POST" action="traitement_connexion.php">
+            <form method="POST" action="../bloc2/traitement_connexion.php">
                 <input type="hidden" name="role" id="role" value="etudiant">
 
                 <div class="champ">

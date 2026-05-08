@@ -1,9 +1,13 @@
 <?php
 
 // Paramètres de connexion à Oracle
-define('DB_USER',     'votre_user');
-define('DB_PASSWORD', 'votre_password');
+define('DB_USER',     'eduligne');
+define('DB_PASSWORD', 'eduligne123');
 define('DB_DSN',      'localhost/XEPDB1');
+
+// Identifiants administrateur (pas de table ADMIN dans le schéma SQL)
+define('ADMIN_NOM',      'admin');
+define('ADMIN_PASSWORD', 'admin123');
 
 // Ouvre et retourne une connexion Oracle, arrête tout si échec
 function getOracleConnection() {

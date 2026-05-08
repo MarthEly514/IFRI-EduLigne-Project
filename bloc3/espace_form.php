@@ -1,3 +1,25 @@
+<?php
+$role_requis = 'formateur';
+require_once '../bloc2/includes/guard.php';
+require_once '../bloc2/includes/cours.php';
+require_once '../bloc2/includes/formateur.php';
+
+// ── Traitement POST : dispenser un cours ────────────────────────────────────
+$message = '';
+$type_message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'dispenser') {
+    $id_cours = filter_input(INPUT_POST, 'id_cours', FILTER_VALIDATE_INT);
+    if ($id_cours) {
+        $resultat = dispenserCours((int)$session['id'], $id_cours);
+        $message = $resultat['message'];
+        $type_message = $resultat['succes'] ? 'succes' : 'erreur';
+    }
+}
+
+// ── Récupérer tous les cours pour le select ─────────────────────────────────
+$listeCours = getCours();
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -26,12 +48,18 @@
                     <circle cx="12" cy="7" r="4" />
                 </svg>
             </div>
-            <span class="nom-utilisateur" style="font-weight:600;">Audrey </span>
+            <span class="nom-utilisateur" style="font-weight:600;"><?= htmlspecialchars($session['nom']) ?></span>
         </div>
     </nav>
 
     <div class="contenu-espace">
         <h2 class="titre-espace">Espace formateur</h2>
+
+        <?php if ($message): ?>
+            <p style="color:<?= $type_message === 'succes' ? '#38A169' : '#E53E3E' ?>; font-weight:600; margin-bottom:1rem;">
+                <?= htmlspecialchars($message) ?>
+            </p>
+        <?php endif; ?>
 
         <div class="liste-actions">
 
@@ -82,18 +110,23 @@
                 <button id="btn-fermer-dispenser" type="button">&times;</button>
             </div>
             <p>Sélectionnez le cours que vous souhaitez dispenser.</p>
-            <label for="cours-dispenser">Cours</label>
-            <select id="cours-dispenser" required>
-                <option value="" disabled selected>-- Choisir un cours --</option>
-            </select>
-            <div class="modal-actions">
-                <button type="button" id="btn-annuler-dispenser">Annuler</button>
-                <button type="button" class="btn-confirmer">Confirmer</button>
-            </div>
+
+            <form method="POST">
+                <input type="hidden" name="action" value="dispenser">
+                <label for="cours-dispenser">Cours</label>
+                <select id="cours-dispenser" name="id_cours" required>
+                    <option value="" disabled selected>-- Choisir un cours --</option>
+                    <?php foreach ($listeCours as $c): ?>
+                        <option value="<?= (int)$c['ID'] ?>"><?= htmlspecialchars($c['SUJET']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="modal-actions">
+                    <button type="button" id="btn-annuler-dispenser">Annuler</button>
+                    <button type="submit" class="btn-confirmer">Confirmer</button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <div class="toast" id="toast-dispenser">Vous dispensez maintenant ce cours.</div>
 
     <script>
         const modalDispenser = document.getElementById('modal-dispenser');
@@ -104,14 +137,6 @@
         document.getElementById('btn-annuler-dispenser').addEventListener('click', closeDispenser);
         modalDispenser.addEventListener('click', e => {
             if (e.target === modalDispenser) closeDispenser();
-        });
-
-        document.querySelector('#modal-dispenser .btn-confirmer').addEventListener('click', function() {
-            if (document.getElementById('cours-dispenser').value === '') return;
-            closeDispenser();
-            const toast = document.getElementById('toast-dispenser');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
         });
     </script>
 
